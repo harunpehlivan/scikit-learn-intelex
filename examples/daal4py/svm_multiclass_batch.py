@@ -78,5 +78,5 @@ if __name__ == "__main__":
         "\nSVM classification results (first 20 observations):\n",
         pred_res.prediction[0:20]
     )
-    print("\nGround truth (first 20 observations):\n", pred_labels[0:20])
+    print("\nGround truth (first 20 observations):\n", pred_labels[:20])
     print('All looks good!')

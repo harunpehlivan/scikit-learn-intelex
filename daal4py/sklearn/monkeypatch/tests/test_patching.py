@@ -66,12 +66,10 @@ def get_result_log():
     mas = []
     result = {}
     for i in process.decode().split('\n'):
-        if not i.startswith('INFO') and len(mas) != 0:
+        if not i.startswith('INFO') and mas:
             run_parse(mas, result)
             mas.clear()
-            mas.append(i.strip())
-        else:
-            mas.append(i.strip())
+        mas.append(i.strip())
     del os.environ['IDP_SKLEARN_VERBOSE']
     return result
 

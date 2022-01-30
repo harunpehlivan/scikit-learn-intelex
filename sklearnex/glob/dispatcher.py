@@ -16,12 +16,7 @@
 #===============================================================================
 
 def get_patch_str(name=None, verbose=True):
-    return f"""try:
-    from sklearnex import patch_sklearn
-    patch_sklearn(name={str(name)}, verbose={str(verbose)})
-    del patch_sklearn
-except ImportError:
-    pass"""
+    return f'try:\x1f    from sklearnex import patch_sklearn\x1f    patch_sklearn(name={name}, verbose={verbose})\x1f    del patch_sklearn\x1fexcept ImportError:\x1f    pass'
 
 
 def get_patch_str_re():

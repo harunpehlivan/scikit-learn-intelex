@@ -48,12 +48,9 @@ def main(readcsv=read_csv, method='defaultDense'):
     for infile in infiles:
         algo.compute(infile)
 
-    # All files are done, now finalize the computation
-    result = algo.finalize()
-
     # SVD result objects provide leftSingularMatrix,
     # rightSingularMatrix and singularValues
-    return result
+    return algo.finalize()
 
 
 if __name__ == "__main__":
@@ -62,6 +59,7 @@ if __name__ == "__main__":
     print("\nRight orthogonal matrix V:\n", result.rightSingularMatrix)
     print(
         "\nLeft orthogonal matrix U (first 10 rows):\n",
-        result.leftSingularMatrix[0:10]
+        result.leftSingularMatrix[:10],
     )
+
     print('All looks good!')

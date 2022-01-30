@@ -91,13 +91,12 @@ def _transfer_to_host(queue, *data):
             if not dpctl_available:
                 raise RuntimeError("dpctl need to be installed to work "
                                    "with __sycl_usm_array_interface__")
-            if queue is not None:
-                if queue.sycl_device != usm_iface['syclobj'].sycl_device:
-                    raise RuntimeError('Input data shall be located '
-                                       'on single target device')
-            else:
+            if queue is None:
                 queue = usm_iface['syclobj']
 
+            elif queue.sycl_device != usm_iface['syclobj'].sycl_device:
+                raise RuntimeError('Input data shall be located '
+                                   'on single target device')
             buffer = as_usm_memory(item).copy_to_host()
             item = np.ndarray(shape=usm_iface['shape'],
                               dtype=usm_iface['typestr'],
@@ -170,11 +169,10 @@ def _copy_to_usm(queue, array):
 def wrap_output_data(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        data = (*args, *kwargs.values())
-        if len(data) == 0:
-            usm_iface = None
-        else:
+        if data := (*args, *kwargs.values()):
             usm_iface = getattr(data[0], '__sycl_usm_array_interface__', None)
+        else:
+            usm_iface = None
         result = func(self, *args, **kwargs)
         if usm_iface is not None:
             return _copy_to_usm(usm_iface['syclobj'], result)

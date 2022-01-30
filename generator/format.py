@@ -40,7 +40,7 @@ pydefaults.update(
 # Same but when calling C++
 # We actually only need bool for distributed/streaming; the rest is handled in use_default
 cppdefaults = defaultdict(lambda: 'NULL')
-cppdefaults.update({'bool': 'false', })
+cppdefaults['bool'] = 'false'
 
 
 def flat(typ):
@@ -55,16 +55,12 @@ def flat(typ):
                  r'daal::services::SharedPtr<\1Batch>', typ)
     typ = re.sub(r'(daal::)?services::SharedPtr<([^>]+)>', r'\2__iface__', typ)
     nn = typ.split('::')
-    if nn[0] == 'daal':
-        if nn[1] == 'algorithms':
-            r = '_'.join(nn[2:])
-        else:
-            r = '_'.join(nn[1:])
-    elif nn[0] == 'algorithms':
-        r = '_'.join(nn[1:])
+    if nn[0] == 'daal' and nn[1] == 'algorithms':
+        return '_'.join(nn[2:])
+    elif nn[0] in ['daal', 'algorithms']:
+        return '_'.join(nn[1:])
     else:
-        r = '_'.join(nn)
-    return r
+        return '_'.join(nn)
 
 
 def cy_callext(arg, typ_cy, typ_cyext, s2e=None):
@@ -113,7 +109,7 @@ def mk_var(name='', typ='', const='', dflt=None, inpt=False, algo=None, doc=None
                 realtyp = typ.replace('&', '').replace('*', '').strip()
 
                 # we try to identify enum types, which become strings in python
-                if '::' in realtyp and not any(x in realtyp for x in ['Ptr', 'std::']):
+                if '::' in realtyp and all(x not in realtyp for x in ['Ptr', 'std::']):
                     # string to enum dict for our algo,
                     # needed for converting python strings to C++ enums
                     s2e = 's2e_algorithms_{}'.format(flat(realtyp.rsplit('::', 1)[0]))

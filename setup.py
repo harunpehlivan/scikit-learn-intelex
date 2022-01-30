@@ -79,12 +79,12 @@ d4p_version = (os.environ['DAAL4PY_VERSION'] if 'DAAL4PY_VERSION' in os.environ
                else time.strftime('2021.%Y%m%d.%H%M%S'))
 
 trues = ['true', 'True', 'TRUE', '1', 't', 'T', 'y', 'Y', 'Yes', 'yes', 'YES']
-no_dist = True if 'NO_DIST' in os.environ and os.environ['NO_DIST'] in trues else False
+no_dist = 'NO_DIST' in os.environ and os.environ['NO_DIST'] in trues
 no_stream = 'NO_STREAM' in os.environ and os.environ['NO_STREAM'] in trues
 mpi_root = None if no_dist else os.environ['MPIROOT']
-dpcpp = True if 'DPCPPROOT' in os.environ else False
+dpcpp = 'DPCPPROOT' in os.environ
 dpcpp_root = None if not dpcpp else os.environ['DPCPPROOT']
-dpctl = True if dpcpp and 'DPCTLROOT' in os.environ else False
+dpctl = dpcpp and 'DPCTLROOT' in os.environ
 dpctl_root = None if not dpctl else os.environ['DPCTLROOT']
 
 
@@ -109,8 +109,7 @@ else:
     DIST_CPPS = ['src/transceiver.cpp']
     MPI_INCDIRS = [jp(mpi_root, 'include')]
     MPI_LIBDIRS = [jp(mpi_root, 'lib')]
-    MPI_LIBNAME = getattr(os.environ, 'MPI_LIBNAME', None)
-    if MPI_LIBNAME:
+    if MPI_LIBNAME := getattr(os.environ, 'MPI_LIBNAME', None):
         MPI_LIBS = [MPI_LIBNAME]
     elif IS_WIN:
         if os.path.isfile(jp(mpi_root, 'lib', 'mpi.lib')):

@@ -64,23 +64,20 @@ def _daal_assert_all_finite(X, allow_nan=False, msg_dtype=None):
 
         x_for_daal = lst if is_df and num_of_types > 1 else X
 
-        if dt == np.float64:
-            if not d4p.daal_assert_all_finite(x_for_daal, allow_nan, 0):
-                raise ValueError(err)
-        elif dt == np.float32:
-            if not d4p.daal_assert_all_finite(x_for_daal, allow_nan, 1):
-                raise ValueError(err)
-    # First try an O(n) time, O(1) space solution for the common case that
-    # everything is finite; fall back to O(n) space np.isfinite to prevent
-    # false positives from overflow in sum method. The sum is also calculated
-    # safely to reduce dtype induced overflows.
+        if (
+            dt == np.float64
+            and not d4p.daal_assert_all_finite(x_for_daal, allow_nan, 0)
+            or dt != np.float64
+            and dt == np.float32
+            and not d4p.daal_assert_all_finite(x_for_daal, allow_nan, 1)
+        ):
+            raise ValueError(err)
     elif is_float and (np.isfinite(_safe_accumulator_op(np.sum, X))):
         pass
     elif is_float:
         if allow_nan and np.isinf(X).any() or \
                 not allow_nan and not np.isfinite(X).all():
             raise ValueError(err)
-    # for object dtype data, we only check for NaNs (GH-13254)
     elif dt == np.dtype('object') and not allow_nan:
         if _object_dtype_isnan(X).any():
             raise ValueError("Input contains NaN")
@@ -204,13 +201,12 @@ def _daal_check_array(array, accept_sparse=False, *, accept_large_sparse=True,
         raise ValueError('force_all_finite should be a bool or "allow-nan"'
                          '. Got {!r} instead'.format(force_all_finite))
 
-    if estimator is not None:
-        if isinstance(estimator, str):
-            estimator_name = estimator
-        else:
-            estimator_name = estimator.__class__.__name__
-    else:
+    if estimator is None:
         estimator_name = "Estimator"
+    elif isinstance(estimator, str):
+        estimator_name = estimator
+    else:
+        estimator_name = estimator.__class__.__name__
     context = " by %s" % estimator_name if estimator is not None else ""
 
     array_orig = array

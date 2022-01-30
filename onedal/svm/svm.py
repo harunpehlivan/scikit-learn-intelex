@@ -71,11 +71,7 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
     def _compute_gamma_sigma(self, gamma, X):
         if isinstance(gamma, str):
             if gamma == 'scale':
-                if sp.isspmatrix(X):
-                    # var = E[X^2] - E[X]^2
-                    X_sc = (X.multiply(X)).mean() - (X.mean())**2
-                else:
-                    X_sc = X.var()
+                X_sc = (X.multiply(X)).mean() - (X.mean())**2 if sp.isspmatrix(X) else X.var()
                 _gamma = 1.0 / (X.shape[1] * X_sc) if X_sc != 0 else 1.0
             elif gamma == 'auto':
                 _gamma = 1.0 / X.shape[1]
@@ -104,7 +100,7 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
                                    else sample_weight, dtype=np.float64)
 
         sample_weight_count = sample_weight.shape[0]
-        if sample_weight_count != 0 and sample_weight_count != n_samples:
+        if sample_weight_count not in [0, n_samples]:
             raise ValueError("sample_weight and X have incompatible shapes: "
                              "%r vs %r\n"
                              "Note: Sparse matrices cannot be indexed w/"
@@ -147,12 +143,14 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
             else:
                 err_msg = 'Invalid input - all samples have zero or negative weights.'
             raise ValueError(err_msg)
-        if np.any(sample_weight <= 0):
-            if self.svm_type == SVMtype.c_svc and \
-                    len(np.unique(y[sample_weight > 0])) != len(self.classes_):
-                raise ValueError(
-                    'Invalid input - all samples with positive weights '
-                    'have the same label.')
+        if (
+            np.any(sample_weight <= 0)
+            and self.svm_type == SVMtype.c_svc
+            and len(np.unique(y[sample_weight > 0])) != len(self.classes_)
+        ):
+            raise ValueError(
+                'Invalid input - all samples with positive weights '
+                'have the same label.')
         ww = sample_weight
         if self.class_weight_ is not None:
             for i, v in enumerate(self.class_weight_):
@@ -178,19 +176,19 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
         }
 
     def _fit(self, X, y, sample_weight, module, queue):
-        if hasattr(self, 'decision_function_shape'):
-            if self.decision_function_shape not in ('ovr', 'ovo', None):
-                raise ValueError(
-                    f"decision_function_shape must be either 'ovr' or 'ovo', "
-                    f"got {self.decision_function_shape}."
-                )
+        if hasattr(
+            self, 'decision_function_shape'
+        ) and self.decision_function_shape not in ('ovr', 'ovo', None):
+            raise ValueError(
+                f"decision_function_shape must be either 'ovr' or 'ovo', "
+                f"got {self.decision_function_shape}."
+            )
 
-        if y is None:
-            if self._get_tags()['requires_y']:
-                raise ValueError(
-                    f"This {self.__class__.__name__} estimator "
-                    f"requires y to be passed, but the target y is None."
-                )
+        if y is None and self._get_tags()['requires_y']:
+            raise ValueError(
+                f"This {self.__class__.__name__} estimator "
+                f"requires y to be passed, but the target y is None."
+            )
         X, y = _check_X_y(
             X, y, dtype=[np.float64, np.float32],
             force_all_finite=True, accept_sparse='csr')
@@ -255,32 +253,30 @@ class BaseSVM(BaseEstimator, metaclass=ABCMeta):
 
         if self.break_ties and self.decision_function_shape == 'ovr' and \
                 len(self.classes_) > 2:
-            y = np.argmax(self.decision_function(X), axis=1)
+            return np.argmax(self.decision_function(X), axis=1)
+        X = _check_array(X, dtype=[np.float64, np.float32],
+                         force_all_finite=True, accept_sparse='csr')
+        _check_n_features(self, X, False)
+
+        if self._sparse and not sp.isspmatrix(X):
+            X = sp.csr_matrix(X)
+        if self._sparse:
+            X.sort_indices()
+
+        if sp.issparse(X) and not self._sparse and not callable(self.kernel):
+            raise ValueError(
+                "cannot use sparse input in %r trained on dense data"
+                % type(self).__name__)
+
+        policy = _get_policy(queue, X)
+        params = self._get_onedal_params(X)
+
+        if hasattr(self, '_onedal_model'):
+            model = self._onedal_model
         else:
-            X = _check_array(X, dtype=[np.float64, np.float32],
-                             force_all_finite=True, accept_sparse='csr')
-            _check_n_features(self, X, False)
-
-            if self._sparse and not sp.isspmatrix(X):
-                X = sp.csr_matrix(X)
-            if self._sparse:
-                X.sort_indices()
-
-            if sp.issparse(X) and not self._sparse and not callable(self.kernel):
-                raise ValueError(
-                    "cannot use sparse input in %r trained on dense data"
-                    % type(self).__name__)
-
-            policy = _get_policy(queue, X)
-            params = self._get_onedal_params(X)
-
-            if hasattr(self, '_onedal_model'):
-                model = self._onedal_model
-            else:
-                model = self._create_model(module)
-            result = module.infer(policy, params, model, to_table(X))
-            y = from_table(result.responses)
-        return y
+            model = self._create_model(module)
+        result = module.infer(policy, params, model, to_table(X))
+        return from_table(result.responses)
 
     def _ovr_decision_function(self, predictions, confidences, n_classes):
         n_samples = predictions.shape[0]

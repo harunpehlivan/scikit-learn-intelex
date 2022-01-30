@@ -67,12 +67,10 @@ def get_result_log():
     for i in process.decode().split('\n'):
         if i.startswith('SKLEARNEX WARNING'):
             continue
-        if not i.startswith('SKLEARNEX INFO') and len(mas) != 0:
+        if not i.startswith('SKLEARNEX INFO') and mas:
             run_parse(mas, result)
             mas.clear()
-            mas.append(i.strip())
-        else:
-            mas.append(i.strip())
+        mas.append(i.strip())
     del os.environ['SKLEARNEX_VERBOSE']
     return result
 

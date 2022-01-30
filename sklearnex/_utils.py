@@ -36,30 +36,28 @@ def get_patch_message(s, queue=None, cpu_fallback=False):
     import sys
     if s == "onedal":
         message = "running accelerated version on "
-        if queue is not None:
-            if queue.sycl_device.is_gpu:
-                message += 'GPU'
-            elif queue.sycl_device.is_cpu or queue.sycl_device.is_host:
-                message += 'CPU'
-            else:
-                raise RuntimeError('Unsupported device')
+        if queue is not None and queue.sycl_device.is_gpu:
+            message += 'GPU'
+        elif (
+            queue is not None
+            and (queue.sycl_device.is_cpu or queue.sycl_device.is_host)
+            or queue is None
+            and 'daal4py.oneapi' not in sys.modules
+        ):
+            message += 'CPU'
+        elif queue is not None:
+            raise RuntimeError('Unsupported device')
 
-        elif 'daal4py.oneapi' in sys.modules:
+        else:
             from daal4py.oneapi import _get_device_name_sycl_ctxt
             dev = _get_device_name_sycl_ctxt()
             if dev == 'cpu' or dev == 'host' or dev is None:
                 message += 'CPU'
             elif dev == 'gpu':
-                if cpu_fallback:
-                    message += 'CPU'
-                else:
-                    message += 'GPU'
+                message += 'CPU' if cpu_fallback else 'GPU'
             else:
                 raise ValueError(f"Unexpected device name {dev}."
                                  " Supported types are host, cpu and gpu")
-        else:
-            message += 'CPU'
-
     elif s == "sklearn":
         message = "fallback to original Scikit-learn"
     elif s == "sklearn_after_onedal":

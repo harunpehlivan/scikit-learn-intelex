@@ -144,35 +144,24 @@ class comment_parser(object):
 
         # try to find the beginning of algorithm template description
         regex = r'^ \* <a name=\"DAAL-CLASS-ALGORITHMS__.*(BATCH|ALGORITHMIMPL)\"></a>$'
-        m = re.match(regex, line)
-        if m:
+        if m := re.match(regex, line):
             ctxt.doc_state = doc_state.template
             ctxt.doc = defaultdict()
             return True
 
         # if parsing of algorithm template description is in progress
         if ctxt.doc_state is doc_state.template:
-            # try to find template param description
-            m = re.match(r'^\s+\*\s+\\tparam\s+(\w+)\s+(.+)$', line)
-            if m:
+            if m := re.match(r'^\s+\*\s+\\tparam\s+(\w+)\s+(.+)$', line):
                 ctxt.doc[m.group(1)] = m.group(2)
-            # try to find end of algorithm template description
-            m = re.match(r'.*\*/', line)
-            if m:
+            if m := re.match(r'.*\*/', line):
                 ctxt.doc_state = doc_state.none
-            return True
-
-        # if it is still template then go to next line
-        if ctxt.doc_state is doc_state.template:
             return True
 
         # clear the doc, if we will not find doc then we save empty line
         if ctxt.doc_state in [doc_state.single, doc_state.multi]:
             ctxt.doc = ''
 
-        # try to find single line comment with documentation
-        m = re.match(r'^.*/\*!<(.*?)\*/.*$', line)
-        if m:
+        if m := re.match(r'^.*/\*!<(.*?)\*/.*$', line):
             # save the doc to context and continue with next parser
             ctxt.doc = m.group(1)
             ctxt.doc_state = doc_state.single
@@ -193,9 +182,7 @@ class comment_parser(object):
             doc[1] += ' ' + m.group(1)
             return True
 
-        # try to find the begin of comment with documentation
-        m = re.match(r'^.*/\*!<(.+?)$', line)
-        if m:
+        if m := re.match(r'^.*/\*!<(.+?)$', line):
             # save the begin of doc to context and continue with next parser
             ctxt.doc = m.group(1)
             ctxt.doc_state = doc_state.multi
@@ -219,8 +206,7 @@ class ns_parser(object):
 class eos_parser(object):
     """detect end of struct/class/enum '};'"""
     def parse(self, elem, ctxt):
-        m = re.match(r'^}\s*;\s*$', elem)
-        if m:
+        if m := re.match(r'^}\s*;\s*$', elem):
             ctxt.enum = False
             ctxt.curr_class = False
             ctxt.access = False
@@ -233,8 +219,7 @@ class eos_parser(object):
 class include_parser(object):
     """parse #include"""
     def parse(self, elem, ctxt):
-        mi = re.match(r'#include\s+[<\"](algorithms/.+?h)[>\"]', elem)
-        if mi:
+        if mi := re.match(r'#include\s+[<\"](algorithms/.+?h)[>\"]', elem):
             ctxt.gdict['includes'].add(mi.group(1))
             return True
         return False
@@ -244,8 +229,9 @@ class include_parser(object):
 class typedef_parser(object):
     """Parse a typedef"""
     def parse(self, elem, ctxt):
-        m = re.match(r'\s*typedef(\s+(struct|typename))?\s+(.+)\s+(\w+).*', elem)
-        if m:
+        if m := re.match(
+            r'\s*typedef(\s+(struct|typename))?\s+(.+)\s+(\w+).*', elem
+        ):
             if ctxt.curr_class:
                 ctxt.gdict['classes'][ctxt.curr_class].typedefs[m.group(4).strip()] = \
                     m.group(3).strip()
@@ -259,8 +245,7 @@ class typedef_parser(object):
 class enum_parser(object):
     """Parse an enum"""
     def parse(self, elem, ctxt):
-        me = re.match(r'\s*enum +(\w+)\s*', elem)
-        if me:
+        if me := re.match(r'\s*enum +(\w+)\s*', elem):
             ctxt.enum = me.group(1)
             # we need a deterministic order when generating API
             ctxt.gdict['enums'][ctxt.enum] = OrderedDict()
@@ -277,8 +262,7 @@ class enum_parser(object):
             if me and not me.group(1).startswith('last'):
                 # save the destination for documentation
                 ctxt.doc_lambda = lambda: ctxt.gdict['enums'][ctxt.enum][me.group(1)]
-                ctxt.gdict['enums'][ctxt.enum][me.group(1)] = \
-                    [me.group(2) if me.group(2) else '', ctxt.doc]
+                ctxt.gdict['enums'][ctxt.enum][me.group(1)] = [me.group(2) or '', ctxt.doc]
                 return True
         return False
 
@@ -288,8 +272,7 @@ class access_parser(object):
     """Parse access specifiers"""
     def parse(self, elem, ctxt):
         if ctxt.curr_class:
-            am = re.match(r'\s*(public|private|protected)\s*:\s*', elem)
-            if am:
+            if am := re.match(r'\s*(public|private|protected)\s*:\s*', elem):
                 ctxt.access = am.group(1) == 'public'
         return False
 
@@ -298,8 +281,7 @@ class access_parser(object):
 class step_parser(object):
     """Look for distributed steps"""
     def parse(self, elem, ctxt):
-        m = re.match(r'.*[<, ](step\d+(Master|Local))[>, ].*', elem)
-        if m:
+        if m := re.match(r'.*[<, ](step\d+(Master|Local))[>, ].*', elem):
             ctxt.gdict['steps'].add(m.group(1))
         return False
 
@@ -389,8 +371,7 @@ class member_parser(object):
         if ctxt.curr_class and ctxt.access:
             regex = r'\s*((?:[\w:_]|< ?| ?>| ?, ?)+)(?<!return|delete)' + \
                     r'\s+[\*&]?\s*([\w_]+)\s*;'
-            mm = re.match(regex, elem)
-            if mm:
+            if mm := re.match(regex, elem):
                 if mm.group(2) not in ctxt.gdict['classes'][ctxt.curr_class].members:
                     # save the destination for documentation
                     ctxt.doc_lambda = lambda: ctxt.gdict['classes'][
@@ -436,22 +417,14 @@ class class_template_parser(object):
                 tmpltmp = None
                 mtm = re.match(r'.*?(\w*Method) +(\w+?)( *= *(\w+))?[ >]*$', ta)
                 if mtm and 'CompressionMethod' not in elem:
-                    tmpltmp = [mtm.group(2),
-                               mtm.group(1),
-                               mtm.group(4) if mtm.group(4) else '', doc]
+                    tmpltmp = [mtm.group(2), mtm.group(1), mtm.group(4) or '', doc]
                     ctxt.gdict['need_methods'] = True
-                else:
-                    mtt = re.match(r'.*typename \w*?FPType( *= *(\w+))?[ >]*$', ta)
-                    if mtt:
-                        tmpltmp = ['fptype',
-                                   'fptypes',
-                                   mtt.group(2) if mtt.group(2) else '', doc]
-                    else:
-                        mtt = re.match(r'.*ComputeStep \w+?( *= *(\w+))?[ >]*$', ta)
-                        if mtt:
-                            tmpltmp = ['step',
-                                       'steps',
-                                       mtt.group(2) if mtt.group(2) else '', doc]
+                elif mtt := re.match(
+                    r'.*typename \w*?FPType( *= *(\w+))?[ >]*$', ta
+                ):
+                    tmpltmp = ['fptype', 'fptypes', mtt.group(2) or '', doc]
+                elif mtt := re.match(r'.*ComputeStep \w+?( *= *(\w+))?[ >]*$', ta):
+                    tmpltmp = ['step', 'steps', mtt.group(2) or '', doc]
                 if not tmpltmp:
                     tatmp = ta.split('=')
                     tatmp2 = tatmp[0].split()
@@ -472,10 +445,7 @@ class class_template_parser(object):
         m2 = re.match(r'\s*(class|struct)\s+\w+;',
                       elem)  # forward declarations can be ignored
         if m and not m2:
-            if m.group(3) in ctxt.ignores:
-                pass
-                # error_template_string += fname + ':\n\tignoring ' + m.group(3)
-            else:
+            if m.group(3) not in ctxt.ignores:
                 # struct/class
                 ctxt.curr_class = m.group(3)
                 parents = m.group(8).split(',') if m.group(8) else []
@@ -526,8 +496,7 @@ class class_template_parser(object):
                     ctxt.template = False
                     return True
                 #error_template_string += fname + ':\n\tignoring ' + m.group(5)
-            elif ctxt.access and not mt and not m and \
-                    not any(s in elem for s in ctxt.ignores):
+            elif ctxt.access and not mt and all(s not in elem for s in ctxt.ignores):
                 # not a class but a non-mapped template
                 ctxt.gdict['error_template_string'] += \
                     '$FNAME:' + str(ctxt.n) + \
@@ -537,8 +506,7 @@ class class_template_parser(object):
         if not mt:
             # let's keep track of occurences of 'template' which we could not digest
             ctxt.template = False
-            mt = re.match(r'template[^<]*<', elem)
-            if mt:
+            if mt := re.match(r'template[^<]*<', elem):
                 ctxt.gdict['error_template_string'] += \
                     '$FNAME:' + str(ctxt.n) + ': Warning: ' + elem
         return False
@@ -607,21 +575,19 @@ def parse_version(header):
     v = (None, None, None, None)
     for elem in header:
         if '#define __INTEL_DAAL_' in elem:
-            m = re.match(r'#define __INTEL_DAAL__ (\d+)', elem)
-            if m:
+            if m := re.match(r'#define __INTEL_DAAL__ (\d+)', elem):
                 v = (m.group(1), v[1], v[2], v[3])
-            m = re.match(r'#define __INTEL_DAAL_MINOR__ (\d+)', elem)
-            if m:
+            if m := re.match(r'#define __INTEL_DAAL_MINOR__ (\d+)', elem):
                 v = (v[0], m.group(1), v[2], v[3])
-            m = re.match(r'#define __INTEL_DAAL_UPDATE__ (\d+)', elem)
-            if m:
+            if m := re.match(r'#define __INTEL_DAAL_UPDATE__ (\d+)', elem):
                 v = (v[0], v[1], m.group(1), v[3])
-            m = re.match(r'#define __INTEL_DAAL_STATUS__ (.\w.)', elem)
-            if m:
-                if m.group(1) != 'P':
-                    v = (v[0], v[1], v[2], m.group(1))
-                else:
-                    v = (v[0], v[1], v[2], '')
+            if m := re.match(r'#define __INTEL_DAAL_STATUS__ (.\w.)', elem):
+                v = (
+                    (v[0], v[1], v[2], m.group(1))
+                    if m.group(1) != 'P'
+                    else (v[0], v[1], v[2], '')
+                )
+
             else:
                 v = (v[0], v[1], v[2], v[3])
         if None not in v:
@@ -629,5 +595,4 @@ def parse_version(header):
     return v
 
 
-if __name__ == "__main__":
-    pass
+pass

@@ -115,10 +115,9 @@ class TSNE(BaseTSNE):
         if self._learning_rate == 'auto':
             self._learning_rate = X.shape[0] / self.early_exaggeration / 4
             self._learning_rate = np.maximum(self._learning_rate, 50)
-        else:
-            if not (self._learning_rate > 0):
-                raise ValueError("'learning_rate' must be a positive number "
-                                 "or 'auto'.")
+        elif self._learning_rate <= 0:
+            raise ValueError("'learning_rate' must be a positive number "
+                             "or 'auto'.")
 
         if hasattr(self, 'square_distances'):
             if self.square_distances not in [True, 'legacy']:
@@ -141,13 +140,12 @@ class TSNE(BaseTSNE):
             else:
                 X = check_array(X, accept_sparse=['csr'], ensure_min_samples=2,
                                 dtype=[np.float32, np.float64])
+        elif sklearn_check_version('0.23'):
+            X = self._validate_data(X, accept_sparse=['csr', 'csc', 'coo'],
+                                    dtype=[np.float32, np.float64])
         else:
-            if sklearn_check_version('0.23'):
-                X = self._validate_data(X, accept_sparse=['csr', 'csc', 'coo'],
-                                        dtype=[np.float32, np.float64])
-            else:
-                X = check_array(X, accept_sparse=['csr', 'csc', 'coo'],
-                                dtype=[np.float32, np.float64])
+            X = check_array(X, accept_sparse=['csr', 'csc', 'coo'],
+                            dtype=[np.float32, np.float64])
 
         if self.metric == "precomputed":
             if isinstance(self._init, str) and self._init == 'pca':

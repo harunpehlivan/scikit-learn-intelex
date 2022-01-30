@@ -65,7 +65,7 @@ def build_cpp(cc, cxx, sources, targetprefix, targetname, targetsuffix, libs, li
         library_dir_plat = ['-L' + libdir for libdir in libdirs]
         additional_linker_opts = ['-o', f'{targetprefix}{targetname}{targetsuffix}']
     eca += ['-c']
-    libs = [f'{lib_prefix}{str(item)}{lib_suffix}' for item in libs]
+    libs = [f'{lib_prefix}{item}{lib_suffix}' for item in libs]
 
     d4p_dir = os.getcwd()
     build_dir = os.path.join(d4p_dir, f"build_{targetname}")
@@ -77,10 +77,7 @@ def build_cpp(cc, cxx, sources, targetprefix, targetname, targetsuffix, libs, li
 
     objfiles = [basename(f).replace('.cpp', obj_ext) for f in sources]
     for i, cppfile in enumerate(sources):
-        if IS_WIN:
-            out = [f'/Fo{objfiles[i]}']
-        else:
-            out = ['-o', objfiles[i]]
+        out = [f'/Fo{objfiles[i]}'] if IS_WIN else ['-o', objfiles[i]]
         cmd = [cc] + include_dir_plat + eca + [f'{d4p_dir}/{cppfile}'] + out + defines
         log.info(subprocess.list2cmdline(cmd))
         subprocess.check_call(cmd)

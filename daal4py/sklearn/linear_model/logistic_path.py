@@ -383,7 +383,7 @@ def __logistic_regression_path(
                 func = _daal4py_loss_and_grad
             else:
                 def func(x, *args):
-                    return _multinomial_loss_grad(x, *args)[0:2]
+                    return _multinomial_loss_grad(x, *args)[:2]
         elif solver == 'newton-cg':
             if _dal_ready:
                 if classes.size == 2:

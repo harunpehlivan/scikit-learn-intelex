@@ -83,5 +83,5 @@ if __name__ == "__main__":
         "\nNaiveBayes classification results (first 20 observations):\n",
         result.prediction[0:20]
     )
-    print("\nGround truth (first 20 observations)\n", labels[0:20])
+    print("\nGround truth (first 20 observations)\n", labels[:20])
     print('All looks good!')

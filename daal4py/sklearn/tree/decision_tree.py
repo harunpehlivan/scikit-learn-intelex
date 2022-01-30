@@ -173,11 +173,11 @@ class DecisionTreeClassifier(BaseEstimator, ClassifierMixin):
             raise ValueError('Parameter "split_criterion" must be '
                              '"gini" or "infoGain".')
 
-        if not isinstance(self.max_depth, numbers.Integral) or \
-                self.max_depth < 0:
-            if self.max_depth is not None:
-                raise ValueError('Parameter "max_depth" must be '
-                                 'a non-negative integer value or None.')
+        if (
+            not isinstance(self.max_depth, numbers.Integral) or self.max_depth < 0
+        ) and self.max_depth is not None:
+            raise ValueError('Parameter "max_depth" must be '
+                             'a non-negative integer value or None.')
 
         if not isinstance(self.min_observations_in_leaf_node, numbers.Integral) or \
                 self.min_observations_in_leaf_node <= 0:

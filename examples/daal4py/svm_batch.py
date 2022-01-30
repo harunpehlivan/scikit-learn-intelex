@@ -71,6 +71,10 @@ if __name__ == "__main__":
         "\nSVM classification decision function (first 20 observations):\n",
         decision_function[0:20]
     )
-    print("\nSVM classification results (first 20 observations):\n", predict_labels[0:20])
-    print("\nGround truth (first 20 observations):\n", plabels[0:20])
+    print(
+        "\nSVM classification results (first 20 observations):\n",
+        predict_labels[:20],
+    )
+
+    print("\nGround truth (first 20 observations):\n", plabels[:20])
     print('All looks good!')

@@ -22,10 +22,14 @@ def _get_policy(queue, *data):
     data_queue = _get_queue(*data)
     if _is_dpc_backend:
         if queue is None:
-            if data_queue is None:
-                return _HostInteropPolicy()
-            return _DataParallelInteropPolicy(data_queue)
-        return _DataParallelInteropPolicy(queue)
+            return (
+                _HostInteropPolicy()
+                if data_queue is None
+                else _DataParallelInteropPolicy(data_queue)
+            )
+
+        else:
+            return _DataParallelInteropPolicy(queue)
     assert data_queue is None and queue is None
     return _HostInteropPolicy()
 

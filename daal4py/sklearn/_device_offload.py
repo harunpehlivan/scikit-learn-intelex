@@ -40,7 +40,7 @@ def _get_host_inputs(*args, **kwargs):
 
 def _extract_usm_iface(*args, **kwargs):
     allargs = (*args, *kwargs.values())
-    if len(allargs) == 0:
+    if not allargs:
         return None
     return getattr(allargs[0],
                    '__sycl_usm_array_interface__',

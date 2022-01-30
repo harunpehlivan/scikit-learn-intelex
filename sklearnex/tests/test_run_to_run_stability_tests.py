@@ -363,7 +363,7 @@ def test_pairwise_distances(metric):
 @pytest.mark.parametrize('array_size', [100, 1000, 10000])
 def test_roc_auc(array_size):
     a = [random.randint(0, 1) for i in range(array_size)]
-    b = [random.randint(0, 1) for i in range(array_size)]
+    b = [random.randint(0, 1) for _ in range(array_size)]
     baseline = roc_auc_score(a, b)
     for _ in range(5):
         res = roc_auc_score(a, b)

@@ -57,12 +57,9 @@ def main(readcsv=read_csv, method='defaultDense'):
         algo.compute(data)
         lines_read += data.shape[0]
 
-    # All files are done, now finalize the computation
-    result = algo.finalize()
-
     # result provides minimum, maximum, sum, sumSquares, sumSquaresCentered,
     # mean, secondOrderRawMoment, variance, standardDeviation, variation
-    return result
+    return algo.finalize()
 
 
 if __name__ == "__main__":

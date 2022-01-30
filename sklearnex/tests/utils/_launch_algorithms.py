@@ -105,7 +105,7 @@ def run_utils():
     # roc_auc_score
     for t in [np.float32, np.float64]:
         a = [random.randint(0, 1) for i in range(1000)]
-        b = [random.randint(0, 1) for i in range(1000)]
+        b = [random.randint(0, 1) for _ in range(1000)]
         a = np.array(a, dtype=t)
         b = np.array(b, dtype=t)
         print('roc_auc_score', t.__name__)

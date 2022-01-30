@@ -95,12 +95,11 @@ def _daal4py_predict(self, X):
         fptype=_fptype,
         method='defaultDense'
     )
-    if sklearn_check_version('0.23'):
-        if X.shape[1] != self.n_features_in_:
-            raise ValueError(
-                f'X has {X.shape[1]} features, '
-                f'but LinearRegression is expecting '
-                f'{self.n_features_in_} features as input')
+    if sklearn_check_version('0.23') and X.shape[1] != self.n_features_in_:
+        raise ValueError(
+            f'X has {X.shape[1]} features, '
+            f'but LinearRegression is expecting '
+            f'{self.n_features_in_} features as input')
     try:
         lr_res = lr_pred.compute(X, self.daal_model_)
     except RuntimeError:
@@ -209,8 +208,7 @@ def _predict_linear(self, X):
     if sklearn_check_version('0.23'):
         X = check_array(X, accept_sparse='csr', dtype=[np.float64, np.float32])
     X = np.asarray(X) if not sp.issparse(X) and not is_df else X
-    good_shape_for_daal = \
-        True if X.ndim <= 1 else True if X.shape[0] > X.shape[1] else False
+    good_shape_for_daal = True if X.ndim <= 1 else X.shape[0] > X.shape[1]
 
     _patching_status = PatchingConditionsChain(
         "sklearn.linear_model.LinearRegression.predict")

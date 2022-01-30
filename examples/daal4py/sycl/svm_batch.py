@@ -154,7 +154,8 @@ if __name__ == "__main__":
     )
     print(
         "\nSVM classification predict result (first 10 observations):\n",
-        predict_result[0:10]
+        predict_result[:10],
     )
-    print("\nGround truth (first 10 observations):\n", predict_labels[0:10])
+
+    print("\nGround truth (first 10 observations):\n", predict_labels[:10])
     print('All looks good!')

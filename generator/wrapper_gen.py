@@ -1290,12 +1290,9 @@ def flat(t, cpp=True):
     def _flat(ty):
         def __flat(typ):
             nn = typ.split('::')
-            if nn[0] == 'daal':
-                if nn[1] == 'algorithms':
-                    r = '_'.join(nn[2:])
-                else:
-                    r = '_'.join(nn[1:])
-            elif nn[0] == 'algorithms':
+            if nn[0] == 'daal' and nn[1] == 'algorithms':
+                r = '_'.join(nn[2:])
+            elif nn[0] in ['daal', 'algorithms']:
                 r = '_'.join(nn[1:])
             else:
                 r = '_'.join(nn)
@@ -1443,9 +1440,11 @@ class wrapper_gen(object):
         jparams['result_map'] = cfg['result_typemap']
         jparams['params_ds'] = jparams['params_req'] + \
             jparams['params_opt'] + [cfg['distributed'], cfg['streaming']]
-        jparams['params_all'] = jparams['params_req'] + \
-            (jparams['template_args'] if jparams['template_args'] else []) + \
-            jparams['params_opt'] + [cfg['distributed'], cfg['streaming']]
+        jparams['params_all'] = (
+            (jparams['params_req'] + (jparams['template_args'] or []))
+            + jparams['params_opt']
+        ) + [cfg['distributed'], cfg['streaming']]
+
         jparams['args_all'] = \
             jparams['input_args'] + jparams['params_req'] + jparams['params_opt']
 

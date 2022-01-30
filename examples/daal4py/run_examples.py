@@ -51,7 +51,7 @@ else:
 
 assert 8 * struct.calcsize('P') in [32, 64]
 
-if 8 * struct.calcsize('P') == 32:
+if struct.calcsize('P') == 4:
     logdir = jp(exdir, '_results', 'ia32')
 else:
     logdir = jp(exdir, '_results', 'intel64')
@@ -80,30 +80,23 @@ if sycl_extention_available:
 
 
 def check_version(rule, target):
-    if not isinstance(rule[0], type(target)):
-        if rule > target:
-            return False
-    else:
+    if isinstance(rule[0], type(target)):
         for rule_item in rule:
             if rule_item > target:
                 return False
             if rule_item[0] == target[0]:
                 break
+    elif rule > target:
+        return False
     return True
 
 
 def check_device(rule, target):
-    for rule_item in rule:
-        if rule_item not in target:
-            return False
-    return True
+    return all(rule_item in target for rule_item in rule)
 
 
 def check_os(rule, target):
-    for rule_item in rule:
-        if rule_item not in target:
-            return False
-    return True
+    return all(rule_item in target for rule_item in rule)
 
 
 def check_library(rule):
@@ -183,8 +176,9 @@ def run_all(nodist=False, nostream=False):
                 logfn = jp(logdir, script.replace('.py', '.res'))
                 with open(logfn, 'w') as logfile:
                     print('\n##### ' + jp(dirpath, script))
-                    execute_string = get_exe_cmd(jp(dirpath, script), nodist, nostream)
-                    if execute_string:
+                    if execute_string := get_exe_cmd(
+                        jp(dirpath, script), nodist, nostream
+                    ):
                         os.chdir(dirpath)
                         proc = subprocess.Popen(
                             execute_string if IS_WIN else ['/bin/bash',

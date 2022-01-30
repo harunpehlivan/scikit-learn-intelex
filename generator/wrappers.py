@@ -27,8 +27,9 @@ def wrap_algo(algo, ver):
                                                    'logitboost']):
         return False
     # ignore deprecated version of stump
-    if 'stump' in algo and not any(x in algo for x in ['stump::regression',
-                                                       'stump::classification']):
+    if 'stump' in algo and all(
+        x not in algo for x in ['stump::regression', 'stump::classification']
+    ):
         return False
     # other deprecated algos
     if any(x in algo for x in ['boosting', 'weak_learner']):

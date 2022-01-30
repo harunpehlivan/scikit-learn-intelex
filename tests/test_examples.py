@@ -31,20 +31,19 @@ from daal4py import _get__daal_link_version__ as dv
 # First item is major version - 2021,
 # second is minor+patch - 0110,
 # third item is status - B
-daal_version = (int(dv()[0:4]), dv()[10:11], int(dv()[4:8]))
+daal_version = int(dv()[:4]), dv()[10:11], int(dv()[4:8])
 print('DAAL version:', daal_version)
 
 
 def check_version(rule, target):
-    if not isinstance(rule[0], type(target)):
-        if rule > target:
-            return False
-    else:
+    if isinstance(rule[0], type(target)):
         for rule_item in rule:
             if rule_item > target:
                 return False
             if rule_item[0] == target[0]:
                 break
+    elif rule > target:
+        return False
     return True
 
 

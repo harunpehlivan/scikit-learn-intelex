@@ -163,10 +163,7 @@ class cython_interface(object):
                     fname = jp(dirpath, filename)
                     with open(fname, "r") as header:
                         parsed_data = parse_header(header, cython_interface.ignores)
-                    ns = cleanup_ns(fname, parsed_data['ns'])
-                    # Now let's update the namespace;
-                    # more than one file might contribute to the same ns
-                    if ns:
+                    if ns := cleanup_ns(fname, parsed_data['ns']):
                         if ns not in self.namespace_dict:
                             self.namespace_dict[ns] = namespace(ns)
                         pns = get_parent(ns)
@@ -219,11 +216,12 @@ class cython_interface(object):
         until we find c (e.g. current-namespace::c)
         or we reached the global namespace.
         """
-        if not c_.startswith('interface'):
-            # Let's get rid of 'interface*'
-            c = re.sub(r'interface\d+::', r'', c_)
-        else:
-            c = c_
+        c = (
+            re.sub(r'interface\d+::', r'', c_)
+            if not c_.startswith('interface')
+            else c_
+        )
+
         # we need to cut off leading daal::
         if c.startswith('daal::'):
             c = c[6:]
@@ -241,10 +239,7 @@ class cython_interface(object):
             if ns == 'daal':
                 done = True
             else:
-                if currns.startswith('::'):
-                    ns = 'daal'
-                else:
-                    ns = splitns(ns)[0]
+                ns = 'daal' if currns.startswith('::') else splitns(ns)[0]
                 currns = ns + cns
         return None
 
@@ -290,7 +285,7 @@ class cython_interface(object):
                 pms = self.get_all_attrs(pns, parentclass, attr, ons)
                 for x in pms:
                     # ignore duplicates from parents
-                    if not ignored(ons, x) and not any(x == y for y in pmembers):
+                    if not ignored(ons, x) and all(x != y for y in pmembers):
                         pmembers[x] = pms[x]
         return pmembers
 
@@ -352,8 +347,7 @@ class cython_interface(object):
             tt = re.sub(r'(?<!daal::)algorithms::', r'daal::algorithms::', t)
         if any(tt == x[0] for x in ifaces.values()):
             return (tt, 'class', tns)
-        tns = self.get_ns(ns, t)
-        if tns:
+        if tns := self.get_ns(ns, t):
             tt = tns + '::' + tname
             if tt == t:
                 return ('std::string &', 'enum', tns) \
@@ -362,8 +356,7 @@ class cython_interface(object):
         usings = ['algorithms::optimization_solver']
         if not any(t.startswith(x) for x in usings):
             for nsx in usings:
-                r = self.to_hltype(ns, nsx + '::' + t)
-                if r:
+                if r := self.to_hltype(ns, nsx + '::' + t):
                     return r
         return None if '::' in t else (t, '??', '??')
 
@@ -374,8 +367,7 @@ class cython_interface(object):
         """
         if n == 'fptypes':
             return ['double', 'float']
-        nns = self.get_ns(ns, n)
-        if nns:
+        if nns := self.get_ns(ns, n):
             nn = splitns(n)[1]
             if nn in self.namespace_dict[nns].enums:
                 return [
@@ -393,8 +385,7 @@ class cython_interface(object):
         """
         if n == 'fptypes':
             return 'typename'
-        nns = self.get_ns(ns, n)
-        if nns:
+        if nns := self.get_ns(ns, n):
             nn = splitns(n)[1]
             if nn in self.namespace_dict[nns].enums:
                 return re.sub(r'(?<!daal::)algorithms::',
@@ -467,11 +458,12 @@ class cython_interface(object):
             assert inp in self.namespace_dict[ins].enums
             if ignored(ns, '::'.join([ins, inp])):
                 continue
-            hlt = self.to_hltype(ns, attrs[i])
-            if hlt:
+            if hlt := self.to_hltype(ns, attrs[i]):
                 if hlt[1] in ['stdtype', 'enum', 'class']:
                     for e in self.namespace_dict[ins].enums[inp]:
-                        if not any(e in x for x in explist) and not ignored(ins, e):
+                        if all(e not in x for x in explist) and not ignored(
+                            ins, e
+                        ):
                             if type(attrs[i]) in [list, tuple]:
                                 explist.append(
                                     (ins, e, hlt[0], attrs[i][1],
@@ -563,7 +555,7 @@ class cython_interface(object):
                         sfx = ''
                     if not any(rtyp.endswith(x) for x in ['SerializationTag', ]):
                         gn = splitns(g)[1].replace('get', '')
-                        if not any(gn == x[1] for x in jparams['named_gets']):
+                        if all(gn != x[1] for x in jparams['named_gets']):
                             typ = re.sub(r'(?<!daal::)data_management',
                                          r'daal::data_management', rtyp)
                             jparams['named_gets'].append((typ, gn, sfx))
@@ -610,12 +602,12 @@ class cython_interface(object):
 
 ###############################################################################
     def get_template_specializations(self, ns, cls):
-        res = []
         pat = cls + '<'
-        for c in self.namespace_dict[ns].classes:
-            if c.startswith(pat):
-                res.append((ns, self.namespace_dict[ns].classes[c]))
-        return res
+        return [
+            (ns, self.namespace_dict[ns].classes[c])
+            for c in self.namespace_dict[ns].classes
+            if c.startswith(pat)
+        ]
 
 ###############################################################################
     def get_all_parameter_classes(self, ns):
@@ -627,8 +619,7 @@ class cython_interface(object):
                 p = self.get_class_for_typedef(ns, c, 'ParameterType')
                 if p and p not in res:
                     res.append((p[0], self.namespace_dict[p[0]].classes[p[1]]))
-                    t = self.get_template_specializations(*p)
-                    if t:
+                    if t := self.get_template_specializations(*p):
                         res += t
         return res
 

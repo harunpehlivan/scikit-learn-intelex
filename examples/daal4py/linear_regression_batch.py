@@ -66,5 +66,5 @@ if __name__ == "__main__":
         "\nLinear Regression prediction results: (first 10 rows):\n",
         predict_result.prediction[0:10]
     )
-    print("\nGround truth (first 10 rows):\n", ptdata[0:10])
+    print("\nGround truth (first 10 rows):\n", ptdata[:10])
     print('All looks good!')

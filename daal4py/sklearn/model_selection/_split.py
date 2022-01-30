@@ -35,7 +35,7 @@ except ImportError:
 try:
     import mkl_random
     mkl_random_is_imported = True
-except (ImportError, ModuleNotFoundError):
+except ImportError:
     mkl_random_is_imported = False
 
 try:
@@ -91,41 +91,39 @@ def _daal_train_test_split(*arrays, **options):
 
         train = np.arange(n_train)
         test = np.arange(n_train, n_train + n_test)
-    else:
-        if stratify is not None:
-            cv = StratifiedShuffleSplit(
-                test_size=n_test,
-                train_size=n_train,
-                random_state=random_state
-            )
-            train, test = next(cv.split(X=arrays[0], y=stratify))
-        else:
-            if mkl_random_is_imported and \
+    elif stratify is not None:
+        cv = StratifiedShuffleSplit(
+            test_size=n_test,
+            train_size=n_train,
+            random_state=random_state
+        )
+        train, test = next(cv.split(X=arrays[0], y=stratify))
+    elif mkl_random_is_imported and \
                rng not in ['default', 'OPTIMIZED_MT19937'] and \
                (isinstance(random_state, int) or random_state is None):
-                random_state = mkl_random.RandomState(random_state, rng)
-                indexes = random_state.permutation(n_samples)
-                test, train = indexes[:n_test], indexes[n_test:(
-                    n_test + n_train)]
-            elif rng == 'OPTIMIZED_MT19937' and \
-                (isinstance(random_state, int) or random_state is None) and \
-                    platform.system() != 'Windows':
-                indexes = np.empty(
-                    shape=(n_samples,),
-                    dtype=np.int64 if n_train + n_test > 2 ** 31 - 1 else np.int32
-                )
-                random_state = np.random.RandomState(random_state)
-                random_state = random_state.get_state()[1]
-                d4p.daal_generate_shuffled_indices([indexes], [random_state])
-                test, train = indexes[:n_test], indexes[n_test:(
-                    n_test + n_train)]
-            else:
-                cv = ShuffleSplit(
-                    test_size=n_test,
-                    train_size=n_train,
-                    random_state=random_state
-                )
-                train, test = next(cv.split(X=arrays[0], y=stratify))
+        random_state = mkl_random.RandomState(random_state, rng)
+        indexes = random_state.permutation(n_samples)
+        test, train = indexes[:n_test], indexes[n_test:(
+            n_test + n_train)]
+    elif rng == 'OPTIMIZED_MT19937' and \
+        (isinstance(random_state, int) or random_state is None) and \
+            platform.system() != 'Windows':
+        indexes = np.empty(
+            shape=(n_samples,),
+            dtype=np.int64 if n_train + n_test > 2 ** 31 - 1 else np.int32
+        )
+        random_state = np.random.RandomState(random_state)
+        random_state = random_state.get_state()[1]
+        d4p.daal_generate_shuffled_indices([indexes], [random_state])
+        test, train = indexes[:n_test], indexes[n_test:(
+            n_test + n_train)]
+    else:
+        cv = ShuffleSplit(
+            test_size=n_test,
+            train_size=n_train,
+            random_state=random_state
+        )
+        train, test = next(cv.split(X=arrays[0], y=stratify))
 
     res = []
     for arr in arrays:
@@ -156,7 +154,7 @@ def _daal_train_test_split(*arrays, **options):
             (dtypes is not None, "Unable to parse input data types.")])
         if dtypes is not None:
             incorrect_dtype = None
-            for i, dtype in enumerate(dtypes):
+            for dtype in dtypes:
                 if 'float' not in str(dtype) and 'int' not in str(dtype):
                     incorrect_dtype = str(dtype)
                     break

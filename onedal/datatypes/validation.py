@@ -152,7 +152,7 @@ def _check_is_fitted(estimator, attributes=None, *, msg=None):
     if attributes is not None:
         if not isinstance(attributes, (list, tuple)):
             attributes = [attributes]
-        attrs = all([hasattr(estimator, attr) for attr in attributes])
+        attrs = all(hasattr(estimator, attr) for attr in attributes)
     else:
         attrs = [v for v in vars(estimator)
                  if v.endswith("_") and not v.startswith("__")]
@@ -176,8 +176,9 @@ def _type_of_target(y):
         raise ValueError('Expected array-like (array or non-string sequence), '
                          'got %r' % y)
 
-    sparse_pandas = (y.__class__.__name__ in ['SparseSeries', 'SparseArray'])
-    if sparse_pandas:
+    if sparse_pandas := (
+        y.__class__.__name__ in ['SparseSeries', 'SparseArray']
+    ):
         raise ValueError("y cannot be class 'SparseSeries' or 'SparseArray'")
 
     if _is_multilabel(y):

@@ -121,7 +121,7 @@ if d4p.__has_dist__:
                 # with different amount of nodes but cores are the same
                 if i in batch_result.coreIndices:
                     right = spmd_result.assignments[i - node_stride][0]
-                    if not batch_result.assignments[i][0] in cluster_index_dict:
+                    if batch_result.assignments[i][0] not in cluster_index_dict:
                         cluster_index_dict[batch_result.assignments[i][0]] = right
                     left = cluster_index_dict[batch_result.assignments[i][0]]
                     self.assertTrue(

@@ -67,5 +67,5 @@ if __name__ == "__main__":
         "\nDecision tree prediction results (first 20 rows):\n",
         predict_result.prediction[0:20]
     )
-    print("\nGround truth (first 20 rows):\n", plabels[0:20])
+    print("\nGround truth (first 20 rows):\n", plabels[:20])
     print('All looks good!')

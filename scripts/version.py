@@ -29,13 +29,13 @@ def get_onedal_version(dal_root):
     with open(header_version, 'r') as header:
         for elem in header:
             if '#define __INTEL_DAAL__' in elem:
-                match = re.match(r'#define __INTEL_DAAL__ (\d+)', elem)
-                if match:
+                if match := re.match(r'#define __INTEL_DAAL__ (\d+)', elem):
                     major = match.group(1)
 
             if '#define __INTEL_DAAL_MINOR__' in elem:
-                match = re.match(r'#define __INTEL_DAAL_MINOR__ (\d+)', elem)
-                if match:
+                if match := re.match(
+                    r'#define __INTEL_DAAL_MINOR__ (\d+)', elem
+                ):
                     minnor = match.group(1)
     version = int(major) * 10000 + int(minnor) * 100
     return version

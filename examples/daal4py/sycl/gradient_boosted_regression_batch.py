@@ -113,5 +113,5 @@ if __name__ == "__main__":
         "\nGradient boosted trees prediction results (first 10 rows):\n",
         predict_result.prediction[0:10]
     )
-    print("\nGround truth (first 10 rows):\n", test_dep_data[0:10])
+    print("\nGround truth (first 10 rows):\n", test_dep_data[:10])
     print('All looks good!')

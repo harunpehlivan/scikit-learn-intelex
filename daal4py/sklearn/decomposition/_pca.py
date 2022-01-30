@@ -230,19 +230,24 @@ class PCA(PCA_original):
 
         _patching_status = PatchingConditionsChain(
             "sklearn.decomposition.PCA.fit")
-        _dal_ready = _patching_status.and_conditions([
-            (self._fit_svd_solver == 'full',
-                f"'{self._fit_svd_solver}' SVD solver is not supported. "
-                "Only 'full' solver is supported.")
-        ])
-
-        if _dal_ready:
-            _dal_ready = _patching_status.and_conditions([
-                (shape_good_for_daal,
-                    "The shape of X does not satisfy oneDAL requirements: "
-                    "number of features / number of samples >= 2")
-            ])
-            if _dal_ready:
+        if _dal_ready := _patching_status.and_conditions(
+            [
+                (
+                    self._fit_svd_solver == 'full',
+                    f"'{self._fit_svd_solver}' SVD solver is not supported. "
+                    "Only 'full' solver is supported.",
+                )
+            ]
+        ):
+            if _dal_ready := _patching_status.and_conditions(
+                [
+                    (
+                        shape_good_for_daal,
+                        "The shape of X does not satisfy oneDAL requirements: "
+                        "number of features / number of samples >= 2",
+                    )
+                ]
+            ):
                 result = self._fit_full(X, n_components)
             else:
                 result = PCA_original._fit_full(self, X, n_components)
@@ -266,7 +271,7 @@ class PCA(PCA_original):
         X = check_array(X, dtype=[np.float64, np.float32], force_all_finite=check_X)
         fpType = getFPType(X)
 
-        tr_data = dict()
+        tr_data = {}
         if self.mean_ is not None:
             tr_data['mean'] = self.mean_.reshape((1, -1))
         if whiten:
@@ -351,14 +356,12 @@ class PCA(PCA_original):
 
         _patching_status = PatchingConditionsChain(
             "sklearn.decomposition.PCA.fit_transform")
-        _dal_ready = _patching_status.and_conditions([
-            (U is None, "Stock fitting was used.")
-        ])
-        if _dal_ready:
-            _dal_ready = _patching_status.and_conditions([
-                (self.n_components_ > 0, "Number of components <= 0.")
-            ])
-            if _dal_ready:
+        if _dal_ready := _patching_status.and_conditions(
+            [(U is None, "Stock fitting was used.")]
+        ):
+            if _dal_ready := _patching_status.and_conditions(
+                [(self.n_components_ > 0, "Number of components <= 0.")]
+            ):
                 result = self._transform_daal4py(
                     X, whiten=self.whiten, check_X=False, scale_eigenvalues=False)
             else:

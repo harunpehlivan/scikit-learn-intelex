@@ -160,15 +160,22 @@ def daal_pairwise_distances(X, Y=None, metric="euclidean", n_jobs=None,
 
     _patching_status = PatchingConditionsChain(
         "sklearn.metrics.pairwise_distances")
-    _dal_ready = _patching_status.and_conditions([
-        (metric == 'cosine' or metric == 'correlation',
-            f"'{metric}' metric is not supported. "
-            "Only 'cosine' and 'correlation' metrics are supported."),
-        (Y is None, "Second feature array is not supported."),
-        (not issparse(X), "X is sparse. Sparse input is not supported."),
-        (X.dtype == np.float64,
-            f"{X.dtype} X data type is not supported. Only np.float64 is supported.")
-    ])
+    _dal_ready = _patching_status.and_conditions(
+        [
+            (
+                metric in ['cosine', 'correlation'],
+                f"'{metric}' metric is not supported. "
+                "Only 'cosine' and 'correlation' metrics are supported.",
+            ),
+            (Y is None, "Second feature array is not supported."),
+            (not issparse(X), "X is sparse. Sparse input is not supported."),
+            (
+                X.dtype == np.float64,
+                f"{X.dtype} X data type is not supported. Only np.float64 is supported.",
+            ),
+        ]
+    )
+
     _patching_status.write_log()
     if _dal_ready:
         if metric == 'cosine':

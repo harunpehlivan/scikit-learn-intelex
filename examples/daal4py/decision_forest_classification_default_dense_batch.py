@@ -84,7 +84,8 @@ if __name__ == "__main__":
     )
     print(
         "\nDecision forest probabilities results (first 10 rows):\n",
-        predict_result.probabilities[0:10]
+        predict_result.probabilities[:10],
     )
-    print("\nGround truth (first 10 rows):\n", plabels[0:10])
+
+    print("\nGround truth (first 10 rows):\n", plabels[:10])
     print('All looks good!')
